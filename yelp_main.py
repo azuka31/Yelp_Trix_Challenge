@@ -28,7 +28,25 @@ def json2csv(df, dir_name):
 if __name__ == '__main__':
     # testing
     df_spark('datasets/yelp_academic_dataset_business.json')
-    json2csv(df_spark.df, 'flatfile/business')
+    # json2csv(df_spark.df, 'flatfile/business')
+    
+    query='''select
+                business_id,    
+                name,
+                stars,
+                case
+                    when stars <= 2 then 'not recommended'
+                    when stars <= 3 then 'average'
+                    when stars <= 4 then 'recommended'
+                    when stars <= 5 then 'very recommended'
+                    else 'unknown'
+                end as conclusion
+            from business'''
+    
+    spark = SparkSession.builder.getOrCreate()
+    business_summary = spark.sql(query)
+    business_summary.show()
+    
   
     
       
