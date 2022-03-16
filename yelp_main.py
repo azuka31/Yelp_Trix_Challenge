@@ -10,12 +10,12 @@ class df_spark:
 
     def create_sql_table(self, tablename):
         self.df.createOrReplaceTempView(tablename)
-  
+        
 def json2csv(df, dir_name):
     '''
     Spark JSON to CSV converter involving handling struct data type
 
-    Params :
+    Args:
         df       : spark frame
         dir_name : directory_name
     '''
@@ -29,8 +29,7 @@ def df2sqltext(df, name, mode='a', filename='yelp_createtable.sql'):
     '''
     Genereating dataframe to SQL language based on its columns and the datatypes
 
-    Params
-    ------
+    Args:
         df       : spark frame
         name     : table name for SQL language
     '''
@@ -49,14 +48,35 @@ def df2sqltext(df, name, mode='a', filename='yelp_createtable.sql'):
             tmp.append('\t{} {}'.format(col, dtype))
         f.write(',\n'.join(tmp))
         f.write('\n);\n\n')
-    
+
+def prep_json(dir_name):
+    '''
+    Data preparation to read JSON files based on directory and keyword generator.
+
+    Args:
+        dir_name     : where JSON files are stored
+	Returns:
+		file_paths	: path of json files
+		file_keys 	: keyword that distinguish every files
+    '''
+    files = os.listdir(dir_name)
+    file_paths = ['{}/{}'.format(dir_name, file) for file in files]
+    file_keys = [key.replace('yelp_academic_dataset_','').replace('.json','') for key in files]
+    return file_paths, file_keys
+
+
 if __name__ == '__main__':
-    # testing
-    df_spark('datasets/yelp_academic_dataset_business.json')
-    # json2csv(df_spark.df, 'flatfile/business')
+    file_paths, file_keys = prep_json('datasets')
+
+    df_sparks = file_keys
+    df_sparks = list(map(df_spark, file_paths))
     os.system('touch yelp_createtable.sql')
-    df2sqltext(df_spark.df, 'business')
-    
+    for df_spark, name in zip(df_sparks, file_keys):
+        json2csv(df_spark.df, 'flatfile/{}'.format(name))
+        df2sqltext(df_spark.df, name)
+        df_spark.create_sql_table(name)
+
+    # business summary
     query='''select
                 business_id,    
                 name,
@@ -72,8 +92,5 @@ if __name__ == '__main__':
     
     spark = SparkSession.builder.getOrCreate()
     business_summary = spark.sql(query)
-    business_summary.show()
-    
-  
-    
-      
+    json2csv(business_summary, 'flatfile/business_summary')
+    df2sqltext(business_summary, 'business_summary')
