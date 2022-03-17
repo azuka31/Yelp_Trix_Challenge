@@ -54,7 +54,7 @@ def prep_json(dir_name):
     Data preparation to read JSON files based on directory and keyword generator.
 
     Args:
-        dir_name     : where JSON files are stored
+        dir_name     : where JSON files are stored.
 	Returns:
 		file_paths	: path of json files
 		file_keys 	: keyword that distinguish every files
